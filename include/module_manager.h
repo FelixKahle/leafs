@@ -175,6 +175,8 @@ namespace fkleafs
 			std::shared_ptr<ModuleInterface> module_ptr = m_statically_registered_modules.at(info)();
 			m_statically_registered_modules_mutex.ReaderUnlock();
 
+			module_ptr->OnStartupModule();
+
 			m_modules_mutex.Lock();
 			m_modules.emplace(info, module_ptr);
 			m_modules_mutex.Unlock();
@@ -187,6 +189,31 @@ namespace fkleafs
 			static_assert(std::is_base_of<ModuleInterface, Module>::value, "Any Module should be derived from ModuleInterface");
 
 			return LoadModule(info);
+		}
+
+		bool UnloadModule(const ModuleInfo& info)
+		{
+			if (!IsModuleLoaded(info))
+			{
+				LOG(ERROR) << "The module: " << info.ModuleName() << " is not loaded and cannot be unloaded";
+				return false;
+			}
+
+			m_modules_mutex.Lock();
+			m_modules.at(info)->OnShutdownModule();
+			m_modules.erase(info);
+			m_modules_mutex.Unlock();
+
+			return true;
+		}
+
+		template<typename Module>
+		bool UnloadModule(const ModuleInfo info = ModuleInfo::GetModuleInfo<Module>())
+		{
+			// Required that Module is derived from ModuleInterface.
+			static_assert(std::is_base_of<ModuleInterface, Module>::value, "Any Module should be derived from ModuleInterface");
+
+			return UnloadModule(info);
 		}
 
 		std::weak_ptr<ModuleInterface> GetModuleInterfacePtr(const ModuleInfo& info)
@@ -235,12 +262,21 @@ namespace fkleafs
 		 * We use the ModuleInfo class as keys.
 		 */
 		absl::flat_hash_map<ModuleInfo, std::shared_ptr<ModuleInterface>, ModuleInfo::ModuleInfoHash, ModuleInfo::ModuleInfoEqual> m_modules;
+
+		/**
+		 * All registered modules.
+		 * NOTE: A module can be registered but no loaded.
+		 */
 		absl::flat_hash_map<ModuleInfo, std::function<std::shared_ptr<ModuleInterface>()>, ModuleInfo::ModuleInfoHash, ModuleInfo::ModuleInfoEqual> m_statically_registered_modules;
 
 		/**
 		 * Mutex used to lock the m_modules variable.
 		 */
 		mutable absl::Mutex m_modules_mutex;
+
+		/**
+		 * Mutex used to lock the m_statically_registered_modules variable.
+		 */
 		mutable absl::Mutex m_statically_registered_modules_mutex;
 	};
 
@@ -259,5 +295,30 @@ namespace fkleafs
 			return std::make_shared<Module>();
 		}
 	};
+
+	template<typename Module>
+	class StaticallyLinkedModuleRegistrant
+	{
+	public:
+		StaticallyLinkedModuleRegistrant()
+		{
+			ModuleManager::Get().RegisterModule<Module>();
+		}
+	};
 }
+
+#define FKL_MODULE_MANAGER() fkleafs::ModuleManager::Get()
+#define FKL_REGISTER_MODULE(ModuleType) \
+	namespace \
+	{ \
+		fkleafs::StaticallyLinkedModuleRegistrant<ModuleType> statically_linked_module_registrant_##ModuleType; \
+	}
+#define FKL_REQUIRE_MODULE(ModuleType) FKL_MODULE_MANAGER().LoadModule<ModuleType>()
+#define FKL_INJECT_MODULE(ModuleType, GetterName) \
+	std::weak_ptr<ModuleType> GetterName() const \
+	{ \
+		return FKL_MODULE_MANAGER().GetModulePtr<ModuleType>(); \
+	}
+#define FKL_LOAD_MODULE(ModuleType) FKL_MODULE_MANAGER().LoadModule<ModuleType>()
+
 #endif // !FKL_MODULE_MANAGER_H

@@ -25,11 +25,10 @@ set(FKLEAFS_HEADER_FILES
 set(FKLEAFS_SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/module_manager.cpp)
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} STATIC
 	${FKLEAFS_HEADER_FILES}
 	${FKLEAFS_SOURCE_FILES}
 )
-
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	absl::base
 	absl::log
@@ -37,3 +36,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	absl::synchronization
 	absl::flat_hash_map)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+
+add_executable(SimpleExample ${CMAKE_CURRENT_LIST_DIR}/examples/simple_example.cpp)
+target_link_libraries(SimpleExample PRIVATE ${PROJECT_NAME})
