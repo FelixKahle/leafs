@@ -180,6 +180,7 @@ namespace fkleafs
 			m_modules_mutex.Lock();
 			m_modules.emplace(info, module_ptr);
 			m_modules_mutex.Unlock();
+			return true;
 		}
 
 		template<typename Module>
@@ -307,6 +308,7 @@ namespace fkleafs
 	};
 }
 
+#define FKL_MODULE_INTERFACE public fkleafs::ModuleInterface
 #define FKL_MODULE_MANAGER() fkleafs::ModuleManager::Get()
 #define FKL_REGISTER_MODULE(ModuleType) \
 	namespace \

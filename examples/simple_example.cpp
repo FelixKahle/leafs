@@ -14,12 +14,17 @@
 
 #include "module_manager.h"
 
-class ModuleA : public fkleafs::ModuleInterface
+class ModuleA : FKL_MODULE_INTERFACE
 {
 public:
 	virtual void OnStartupModule() override
 	{
 		LOG(INFO) << "Startup A";
+	}
+
+	virtual void OnShutdownModule() override
+	{
+		LOG(INFO) << "Shutdown A";
 	}
 
 	void Greet()
@@ -29,7 +34,7 @@ public:
 };
 FKL_REGISTER_MODULE(ModuleA)
 
-class ModuleB : public fkleafs::ModuleInterface
+class ModuleB : FKL_MODULE_INTERFACE
 {
 public:
 
@@ -42,6 +47,11 @@ public:
 		FKL_REQUIRE_MODULE(ModuleA);
 
 		GetModuleA().lock()->Greet();
+	}
+
+	virtual void OnShutdownModule() override
+	{
+		LOG(INFO) << "Shutdown B";
 	}
 };
 FKL_REGISTER_MODULE(ModuleB)
