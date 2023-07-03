@@ -20,7 +20,10 @@ set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(third_party/abseil-cpp)
 
 set(FKLEAFS_HEADER_FILES
-	${CMAKE_CURRENT_LIST_DIR}/include/module_interface.h)
+	${CMAKE_CURRENT_LIST_DIR}/include/leafs.h
+	${CMAKE_CURRENT_LIST_DIR}/include/module_info.h
+	${CMAKE_CURRENT_LIST_DIR}/include/module_interface.h
+	${CMAKE_CURRENT_LIST_DIR}/include/module_manager.h)
 
 set(FKLEAFS_SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/module_manager.cpp)

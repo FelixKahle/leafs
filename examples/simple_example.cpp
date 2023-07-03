@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "module_manager.h"
+#include "leafs.h"
 
 class ModuleA : FKL_MODULE_INTERFACE
 {
